@@ -17,7 +17,6 @@ def get_db():
     finally:
         db.close()
 
-# ------------------------ Pydantic Schemas ------------------------
 class UserCreate(BaseModel):
     username: str
     email: str
