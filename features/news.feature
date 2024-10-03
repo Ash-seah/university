@@ -1,25 +1,25 @@
-Feature: News Management
+Feature: User Registration
 
-  Scenario: Create a new news item
-    Given I have a news payload with description "Breaking News" and notification_id 1
-    When I send a POST request to "/news/"
+  Scenario: Successful user registration
+    Given the user data is valid
+    When I send a POST request to "/register/" with the user data
     Then the response status code should be 200
-    And the response should contain news with description "Breaking News"
+    And the response message should be "User registered successfully."
 
-  Scenario: Update an existing news item
-    Given a news item exists with id 1 and description "Old News"
-    When I send a PUT request to "/news/1/" with description "Updated News"
-    Then the response status code should be 200
-    And the response should contain news with description "Updated News"
+  Scenario: User registration with existing username
+    Given the user data has an existing username
+    When I send a POST request to "/register/" with the user data
+    Then the response status code should be 400
+    And the response message should be "User with this username or email already exists."
 
-  Scenario: Delete a news item
-    Given a news item exists with id 1
-    When I send a DELETE request to "/news/1/"
-    Then the response status code should be 200
-    And the response should contain a message "News deleted successfully"
+  Scenario: User registration with existing email
+    Given the user data has an existing email
+    When I send a POST request to "/register/" with the user data
+    Then the response status code should be 400
+    And the response message should be "User with this username or email already exists."
 
-  Scenario: Retrieve all news items
-    Given news items exist
-    When I send a GET request to "/news/"
-    Then the response status code should be 200
-    And the response should contain a list of news items
+  Scenario: User registration with missing fields
+    Given the user data is missing required fields
+    When I send a POST request to "/register/" with the incomplete user data
+    Then the response status code should be 422
+    And the response should indicate the missing fields

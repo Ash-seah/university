@@ -1,265 +1,262 @@
 from behave import given, when, then
 import requests
-from datetime import datetime
 
 BASE_URL = "http://localhost:8000"
 
-@given('I have a notification payload with slug "{slug}"')
-def step_given_notification_payload(context, slug):
-    context.notification_payload = {"slug": slug}
+@given('the user data is valid')
+def step_impl(context):
+    context.user_data = {
+        "username": "newuser",
+        "email": "newuser@example.com",
+        "password": "securepassword"
+    }
 
-@when('I send a POST request to "/notifications/"')
-def step_when_post_notification(context):
-    response = requests.post(f"{BASE_URL}/notifications/", json=context.notification_payload)
-    context.response = response
+@given('the user data has an existing username')
+def step_impl(context):
+    context.user_data = {
+        "username": "existinguser",
+        "email": "newemail@example.com",
+        "password": "securepassword"
+    }
 
-@then('the response status code should be {status_code}')
-def step_then_status_code(context, status_code):
-    print("context response:" + context.response.content)
-    print("context response:" + context.response.status_code)
+@given('the user data has an existing email')
+def step_impl(context):
+    context.user_data = {
+        "username": "newuser",
+        "email": "existingemail@example.com",
+        "password": "securepassword"
+    }
+
+@given('the user data is missing required fields')
+def step_impl(context):
+    context.user_data = {
+        "username": "newuser"
+        # Missing email and password
+    }
+
+@when('I send a POST request to "/register/" with the user data')
+def step_impl(context):
+    context.response = requests.post(f"{BASE_URL}/register/", json=context.user_data)
+
+@then('the response status code should be {status_code:d}')
+def step_impl(context, status_code):
     assert context.response.status_code == status_code
 
-@then('the response should contain a notification with slug "{slug}"')
-def step_then_notification_slug(context, slug):
-    response_data = context.response.json()
-    assert response_data["slug"] == slug
+@then('the response message should be "{message}"')
+def step_impl(context, message):
+    assert context.response.json().get("message") == message
 
-@given('a notification exists with id {notification_id:d} and slug "{slug}"')
-def step_given_existing_notification(context, notification_id, slug):
-    # This step assumes the notification already exists in the database.
-    # You might need to set up the database state before running the tests.
-    pass
+@then('the response should indicate the missing fields')
+def step_impl(context):
+    response_json = context.response.json()
+    assert "detail" in response_json
+    assert response_json["detail"][0]["msg"] == "field required"
 
-@when('I send a PUT request to "/notifications/{notification_id}/" with slug "{slug}"')
-def step_when_put_notification(context, notification_id, slug):
-    response = requests.put(f"{BASE_URL}/notifications/{notification_id}/", json={"slug": slug})
-    context.response = response
+## login
 
-@given('a notification exists with id {notification_id:d}')
-def step_given_notification_exists(context, notification_id):
-    # This step assumes the notification already exists in the database.
-    pass
+from behave import given, when, then
+import requests
 
-@when('I send a DELETE request to "/notifications/{notification_id}/"')
-def step_when_delete_notification(context, notification_id):
-    response = requests.delete(f"{BASE_URL}/notifications/{notification_id}/")
-    context.response = response
+@given('the user is on the login page')
+def step_impl(context):
+    context.base_url = 'http://localhost:8000/login/'
 
-@then('the response should contain a message "{message}"')
-def step_then_response_message(context, message):
-    response_data = context.response.json()
-    assert response_data["message"] == message
+@when('the user enters valid credentials')
+def step_impl(context):
+    context.response = requests.post(context.base_url, json={"username": "testuser", "password": "testpass"})
 
-@given('notifications exist')
-def step_given_notifications_exist(context):
-    # This step assumes notifications already exist in the database.
-    pass
+@when('the user enters invalid credentials')
+def step_impl(context):
+    context.response = requests.post(context.base_url, json={"username": "testuser", "password": "wrongpass"})
 
-@when('I send a GET request to "/notifications/"')
-def step_when_get_notifications(context):
-    response = requests.get(f"{BASE_URL}/notifications/")
-    context.response = response
+@when('the user submits the login form')
+def step_impl(context):
+    pass  # This step is handled in the previous steps
 
-@then('the response should contain a list of notifications')
-def step_then_list_of_notifications(context):
-    response_data = context.response.json()
-    assert isinstance(response_data, list)
+@then('the user should receive an access token')
+def step_impl(context):
+    assert context.response.status_code == 200
+    assert "access_token" in context.response.json()
 
-@given('I have a news payload with description "{description}" and notification_id {notification_id:d}')
-def step_given_news_payload(context, description, notification_id):
-    context.news_payload = {"description": description, "notification_id": notification_id}
+@then('the token type should be "bearer"')
+def step_impl(context):
+    assert context.response.json()["token_type"] == "bearer"
 
-@when('I send a POST request to "/news/"')
-def step_when_post_news(context):
-    response = requests.post(f"{BASE_URL}/news/", json=context.news_payload)
-    context.response = response
+@then('the user should receive an error message')
+def step_impl(context):
+    assert context.response.status_code == 401
+    assert context.response.json()["detail"] == "Invalid credentials"
 
-@then('the response should contain news with description "{description}"')
-def step_then_news_description(context, description):
-    response_data = context.response.json()
-    assert response_data["description"] == description
+## classes
 
-@given('a news item exists with id {news_id:d} and description "{description}"')
-def step_given_existing_news(context, news_id, description):
-    # This step assumes the news item already exists in the database.
-    pass
+# features/steps/class_steps.py
+from behave import given, when, then
+import requests
 
-@when('I send a PUT request to "/news/{news_id}/" with description "{description}"')
-def step_when_put_news(context, news_id, description):
-    response = requests.put(f"{BASE_URL}/news/{news_id}/", json={"description": description})
-    context.response = response
+@given('the user is on the class creation page')
+def step_impl(context):
+    context.base_url = 'http://localhost:8000/classes/'
 
-@given('a news item exists with id {news_id:d}')
-def step_given_news_exists(context, news_id):
-    # This step assumes the news item already exists in the database.
-    pass
+@when('the user enters valid class details')
+def step_impl(context):
+    context.response = requests.post(context.base_url, json={
+        "name": "Math 101",
+        "description": "Basic Math course",
+        "subject": "Mathematics"
+    })
 
-@when('I send a DELETE request to "/news/{news_id}/"')
-def step_when_delete_news(context, news_id):
-    response = requests.delete(f"{BASE_URL}/news/{news_id}/")
-    context.response = response
+@when('the user enters incomplete class details')
+def step_impl(context):
+    context.response = requests.post(context.base_url, json={
+        "name": "Math 101",
+        "description": "",
+        "subject": "Mathematics"
+    })
 
-@given('news items exist')
-def step_given_news_items_exist(context):
-    # This step assumes news items already exist in the database.
-    pass
+@when('the user submits the class creation form')
+def step_impl(context):
+    pass  # This step is handled in the previous steps
 
-@when('I send a GET request to "/news/"')
-def step_when_get_news(context):
-    response = requests.get(f"{BASE_URL}/news/")
-    context.response = response
+@then('the class should be created successfully')
+def step_impl(context):
+    assert context.response.status_code == 200
+    response_json = context.response.json()
+    assert response_json["name"] == "Math 101"
+    assert response_json["description"] == "Basic Math course"
+    assert response_json["subject"] == "Mathematics"
 
-@then('the response should contain a list of news items')
-def step_then_list_of_news(context):
-    response_data = context.response.json()
-    assert isinstance(response_data, list)
+@then('the response should contain the class details')
+def step_impl(context):
+    response_json = context.response.json()
+    assert response_json["name"] == "Math 101"
+    assert response_json["description"] == "Basic Math course"
+    assert response_json["subject"] == "Mathematics"
 
-@given('I have a discount payload with quantity {quantity:d}, start_time "{start_time}", end_time "{end_time}", notification_id {notification_id:d}, and class_id {class_id:d}')
-def step_given_discount_payload(context, quantity, start_time, end_time, notification_id, class_id):
-    context.discount_payload = {
-        "quantity": quantity,
-        "start_time": datetime.fromisoformat(start_time),
-        "end_time": datetime.fromisoformat(end_time),
-        "notification_id": notification_id,
-        "class_id": class_id
-    }
 
-@when('I send a POST request to "/discounts/"')
-def step_when_post_discount(context):
-    response = requests.post(f"{BASE_URL}/discounts/", json=context.discount_payload)
-    context.response = response
+@then('the error message should indicate missing description')
+def step_impl(context):
+    error_detail = context.response.json()["detail"]
+    assert any("description" in error["loc"] for error in error_detail)
 
-@then('the response should contain a discount with quantity {quantity:d}')
-def step_then_discount_quantity(context, quantity):
-    response_data = context.response.json()
-    assert response_data["quantity"] == quantity
 
-@given('a discount exists with id {discount_id:d} and quantity {quantity:d}')
-def step_given_existing_discount(context, discount_id, quantity):
-    # This step assumes the discount already exists in the database.
-    pass
 
-@when('I send a PUT request to "/discounts/{discount_id}/" with quantity {quantity:d}')
-def step_when_put_discount(context, discount_id, quantity):
-    response = requests.put(f"{BASE_URL}/discounts/{discount_id}/", json={"quantity": quantity})
-    context.response = response
+## get_update classes
 
-@given('a discount exists with id {discount_id:d}')
-def step_given_discount_exists(context, discount_id):
-    # This step assumes the discount already exists in the database.
-    pass
+# features/steps/class_steps.py
+from behave import given, when, then
+import requests
 
-@when('I send a DELETE request to "/discounts/{discount_id}/"')
-def step_when_delete_discount(context, discount_id):
-    response = requests.delete(f"{BASE_URL}/discounts/{discount_id}/")
-    context.response = response
+@given('the user is on the classes page')
+def step_impl(context):
+    context.base_url = 'http://localhost:8000/classes/'
 
-@given('discounts exist')
-def step_given_discounts_exist(context):
-    # This step assumes discounts already exist in the database.
-    pass
+@when('the user requests the list of classes')
+def step_impl(context):
+    context.response = requests.get(context.base_url)
 
-@when('I send a GET request to "/discounts/"')
-def step_when_get_discounts(context):
-    response = requests.get(f"{BASE_URL}/discounts/")
-    context.response = response
+@then('the user should receive a list of classes')
+def step_impl(context):
+    assert context.response.status_code == 200
+    assert isinstance(context.response.json(), list)
 
-@then('the response should contain a list of discounts')
-def step_then_list_of_discounts(context):
-    response_data = context.response.json()
-    assert isinstance(response_data, list)
+@then('the list should contain class details')
+def step_impl(context):
+    response_json = context.response.json()
+    assert any(class_["name"] == "Math 101" for class_ in response_json)
+    assert any(class_["description"] == "Basic Math course" for class_ in response_json)
+    assert any(class_["subject"] == "Mathematics" for class_ in response_json)
 
-@given('I have a class payload with name "{name}" and description "{description}"')
-def step_given_class_payload(context, name, description):
-    context.class_payload = {"name": name, "description": description}
+@given('the user is on the class update page')
+def step_impl(context):
+    context.base_url = 'http://localhost:8000/classes/1'  # Assuming class ID 1 for the example
 
-@when('I send a POST request to "/classes/"')
-def step_when_post_class(context):
-    response = requests.post(f"{BASE_URL}/classes/", json=context.class_payload)
-    context.response = response
+@when('the user enters valid updated class details')
+def step_impl(context):
+    context.response = requests.put(context.base_url, json={
+        "name": "Math 102",
+        "description": "Advanced Math",
+        "subject": "Mathematics"
+    })
 
-@then('the response should contain a class with name "{name}"')
-def step_then_class_name(context, name):
-    response_data = context.response.json()
-    assert response_data["name"] == name
+@when('the user enters valid updated class details for a non-existent class')
+def step_impl(context):
+    context.base_url = 'http://localhost:8000/classes/9999'  # Assuming non-existent class ID
+    context.response = requests.put(context.base_url, json={
+        "name": "Math 102",
+        "description": "Advanced Math",
+        "subject": "Mathematics"
+    })
 
-@given('a class exists with id {class_id:d} and name "{name}"')
-def step_given_existing_class(context, class_id, name):
-    # This step assumes the class already exists in the database.
-    pass
+@then('the class should be updated successfully')
+def step_impl(context):
+    assert context.response.status_code == 200
+    response_json = context.response.json()
+    assert response_json["name"] == "Math 102"
+    assert response_json["description"] == "Advanced Math"
+    assert response_json["subject"] == "Mathematics"
 
-@when('I send a PUT request to "/classes/{class_id}/" with name "{name}"')
-def step_when_put_class(context, class_id, name):
-    response = requests.put(f"{BASE_URL}/classes/{class_id}/", json={"name": name})
-    context.response = response
+@then('the response should contain the updated class details')
+def step_impl(context):
+    response_json = context.response.json()
+    assert response_json["name"] == "Math 102"
+    assert response_json["description"] == "Advanced Math"
+    assert response_json["subject"] == "Mathematics"
 
-@given('a class exists with id {class_id:d}')
-def step_given_class_exists(context, class_id):
-    # This step assumes the class already exists in the database.
-    pass
 
-@when('I send a DELETE request to "/classes/{class_id}/"')
-def step_when_delete_class(context, class_id):
-    response = requests.delete(f"{BASE_URL}/classes/{class_id}/")
-    context.response = response
+## delete create
 
-@given('classes exist')
-def step_given_classes_exist(context):
-    # This step assumes classes already exist in the database.
-    pass
 
-@when('I send a GET request to "/classes/"')
-def step_when_get_classes(context):
-    response = requests.get(f"{BASE_URL}/classes/")
-    context.response = response
+@given('the user is on the class deletion page')
+def step_impl(context):
+    context.base_url = 'http://localhost:8000/classes/'
 
-@then('the response should contain a list of classes')
-def step_then_list_of_classes(context):
-    response_data = context.response.json()
-    assert isinstance(response_data, list)
+@when('the user deletes a class with ID {class_id}')
+def step_impl(context, class_id):
+    context.response = requests.delete(f"{context.base_url}{class_id}")
 
-@given('I have a course payload with subject "{subject}", description "{description}", number_of_sessions {number_of_sessions:d}, and discount_id {discount_id:d}')
-def step_given_course_payload(context, subject, description, number_of_sessions, discount_id):
-    context.course_payload = {
-        "subject": subject,
-        "description": description,
-        "number_of_sessions": number_of_sessions,
-        "discount_id": discount_id
-    }
+@then('the class should be deleted successfully')
+def step_impl(context):
+    assert context.response.status_code == 200
+    assert context.response.json()["message"] == "Class deleted successfully."
 
-@when('I send a POST request to "/courses/"')
-def step_when_post_course(context):
-    response = requests.post(f"{BASE_URL}/courses/", json=context.course_payload)
-    context.response = response
 
-@then('the response should contain a course with subject "{subject}"')
-def step_then_course_subject(context, subject):
-    response_data = context.response.json()
-    assert response_data["subject"] == subject
+@given('the user is on the course creation page')
+def step_impl(context):
+    context.base_url = 'http://localhost:8000/courses/'
 
-@given('a course exists with id {course_id:d} and subject "{subject}"')
-def step_given_existing_course(context, course_id, subject):
-    # This step assumes the course already exists in the database.
-    pass
+@when('the user enters valid course details')
+def step_impl(context):
+    context.response = requests.post(context.base_url, json={
+        "subject": "Mathematics",
+        "description": "Advanced Math",
+        "number_of_sessions": 10,
+        "discount_id": 1
+    })
 
-@when('I send a PUT request to "/courses/{course_id}/" with subject "{subject}"')
-def step_when_put_course(context, course_id, subject):
-    response = requests.put(f"{BASE_URL}/courses/{course_id}/", json={"subject": subject})
-    context.response = response
+@when('the user enters incomplete course details')
+def step_impl(context):
+    context.response = requests.post(context.base_url, json={
+        "subject": "Mathematics",
+        "description": "",
+        "number_of_sessions": 10,
+        "discount_id": 1
+    })
 
-@given('a course exists with id {course_id:d}')
-def step_given_course_exists(context, course_id):
-    # This step assumes the course already exists in the database.
-    pass
+@then('the course should be created successfully')
+def step_impl(context):
+    assert context.response.status_code == 200
+    response_json = context.response.json()
+    assert response_json["subject"] == "Mathematics"
+    assert response_json["description"] == "Advanced Math"
+    assert response_json["number_of_sessions"] == 10
+    assert response_json
 
-@when('I send a DELETE request to "/courses/{course_id}/"')
-def step_when_delete_course(context, course_id):
-    response = requests.delete(f"{BASE_URL}/courses/{course_id}/")
-    context.response = response
+## manage courses
 
-@given('courses exist')
-def step_given_courses_exist(context):
-    # This step assumes courses already exist in the database.
+@given('there are courses in the database')
+def step_given_courses_in_database(context):
+    # This step would ideally set up the database with some courses
+    # For simplicity, we assume the database already has courses
     pass
 
 @when('I send a GET request to "/courses/"')
@@ -267,7 +264,96 @@ def step_when_get_courses(context):
     response = requests.get(f"{BASE_URL}/courses/")
     context.response = response
 
-@then('the response should contain a list of courses')
-def step_then_list_of_courses(context):
+@then('I should receive a list of all courses')
+def step_then_receive_list_of_courses(context):
+    assert context.response.status_code == 200
+    assert isinstance(context.response.json(), list)
+
+@given('the updated course data is provided')
+def step_given_updated_course_data(context):
+    context.updated_course_data = {
+        "subject": "Physics",
+        "description": "Advanced Physics",
+        "number_of_sessions": 12,
+        "discount_id": 2
+    }
+
+@when('I send a PUT request to "/courses/1"')
+def step_when_update_course(context):
+    response = requests.put(f"{BASE_URL}/courses/{context.course_id}", json=context.updated_course_data)
+    context.response = response
+
+@then('the course should be updated successfully')
+def step_then_course_updated(context):
+    assert context.response.status_code == 200
+
+@then('the response should contain the updated course details')
+def step_then_response_contains_updated_course_details(context):
     response_data = context.response.json()
-    assert isinstance(response_data, list)
+    assert response_data["subject"] == context.updated_course_data["subject"]
+    assert response_data["description"] == context.updated_course_data["description"]
+    assert response_data["number_of_sessions"] == context.updated_course_data["number_of_sessions"]
+    assert response_data["discount_id"] == context.updated_course_data["discount_id"]
+
+
+@given('the notification data is provided')
+def step_given_notification_data(context):
+    context.notification_data = {
+        "slug": "new-notification"
+    }
+
+@when('I send a POST request to "/notifications/"')
+def step_when_create_notification(context):
+    response = requests.post(f"{BASE_URL}/notifications/", json=context.notification_data)
+    context.response = response
+
+@then('the notification should be created successfully')
+def step_then_notification_created(context):
+    assert context.response.status_code == 200
+    context.notification_id = context.response.json()["id"]
+
+@then('the response should contain the notification details')
+def step_then_response_contains_notification_details(context):
+    response_data = context.response.json()
+    assert response_data["slug"] == context.notification_data["slug"]
+
+@given('there are notifications in the database')
+def step_given_notifications_in_database(context):
+    # This step would ideally set up the database with some notifications
+    # For simplicity, we assume the database already has notifications
+    pass
+
+@when('I send a GET request to "/notifications/"')
+def step_when_get_notifications(context):
+    response = requests.get(f"{BASE_URL}/notifications/")
+    context.response = response
+
+@then('I should receive a list of all notifications')
+def step_then_receive_list_of_notifications(context):
+    assert context.response.status_code == 200
+    assert isinstance(context.response.json(), list)
+
+@given('a course exists with ID 1')
+def step_given_course_exists(context):
+    context.course_data = {
+        "subject": "Math",
+        "description": "Advanced Mathematics",
+        "number_of_sessions": 10,
+        "discount_id": 1
+    }
+    response = requests.post(f"{BASE_URL}/courses/", json=context.course_data)
+    context.course_id = response.json()["id"]
+
+@when('I send a DELETE request to "/courses/1"')
+def step_when_delete_course(context):
+    response = requests.delete(f"{BASE_URL}/courses/{context.course_id}")
+    context.response = response
+
+@then('the course should be deleted successfully')
+def step_then_course_deleted(context):
+    assert context.response.status_code == 200
+
+@then('the response should confirm the deletion')
+def step_then_response_confirms_deletion(context):
+    response_data = context.response.json()
+    assert response_data["message"] == "Course deleted successfully."
