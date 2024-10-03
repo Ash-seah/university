@@ -1,0 +1,59 @@
+@startuml
+
+class user{
+    id: int
+    username:str
+    email:str
+    hashed_password: str
+    is_active:bool
+
+
+}
+class classes{
+    id:int
+    name:str
+    description:str
+    owner_id:int
+
+}
+
+class Riazi{
+    id:int
+    name:str
+    description:str
+    class_id:int
+
+}
+
+class Tajrobi{
+    id:int
+    name:str
+    description:str
+    class_id:int
+    
+}
+class Ensani{
+    id:int
+    name:str
+    description:str
+    class_id:int
+    
+}
+
+class Teachers{
+    id:int
+    name:str
+    subject:str
+    class_id:int
+
+}
+
+university <- user :register and login with this model
+university <- classes : the university has this classes
+classes <- Riazi : this class foreignkey to classes
+classes <- Tajrobi : this class foreignkey to classes
+classes <- Ensani : this class foreignkey to classes
+classes <- Teachers : this class foreignkey to classes
+
+
+@enduml
