@@ -14,3 +14,4 @@ Feature: User Management
     Given I have the class creation endpoint
     When I create a class with name "Math" and description "Mathematics class"
     Then the class should be created with name "Math" and description "Mathematics class"
+
