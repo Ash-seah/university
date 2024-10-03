@@ -8,6 +8,8 @@ from datetime import timedelta
 
 app = FastAPI()
 
+ACCESS_TOKEN_EXPIRE_MINUTES = 5
+
 # Dependency to get the database session
 def get_db():
     db = SessionLocal()
