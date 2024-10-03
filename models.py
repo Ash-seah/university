@@ -28,10 +28,11 @@ class Classes(Base):
     # Relationship back to the user
     owner = relationship("User", back_populates="classes")
 
-    # Relationships with Riazi, Tajrobi, Ensani
+    # Relationships with Riazi, Tajrobi, Ensani, and Teachers
     riazi = relationship("Riazi", back_populates="class_info")
     tajrobi = relationship("Tajrobi", back_populates="class_info")
     ensani = relationship("Ensani", back_populates="class_info")
+    teachers = relationship("Teachers", back_populates="class_info")
 
 
 # Riazi Model
@@ -71,3 +72,16 @@ class Ensani(Base):
 
     # Relationship back to Classes
     class_info = relationship("Classes", back_populates="ensani")
+
+
+# Teachers Model
+class Teachers(Base):
+    __tablename__ = 'teachers'
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    subject = Column(String)
+    class_id = Column(Integer, ForeignKey('classes.id'))  # ForeignKey to Classes
+
+    # Relationship back to Classes
+    class_info = relationship("Classes", back_populates="teachers")
