@@ -2,9 +2,15 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import SessionLocal
-from models import User, Classes, Riazi, Tajrobi, Ensani
-from auth import get_password_hash, verify_password, create_access_token  # Optional if you want to add authentication
+from models import User, Classes, Riazi, Tajrobi, Ensani, Teachers
 from typing import List
+<<<<<<< HEAD
+from auth import get_password_hash  # If you implement authentication features
+
+app = FastAPI()
+
+# Dependency to get the DB session
+=======
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -19,6 +25,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 REQUESTS_PER_MINUTE = 20
 ACCESS_TOKEN_EXPIRE_MINUTES = 5
 
+>>>>>>> 1566c1112ff38d7088de88a766934ec5cc73b9fd
 def get_db():
     db = SessionLocal()
     try:
@@ -33,19 +40,23 @@ class UserCreate(BaseModel):
     email: str
     password: str
 
+
 class ClassCreate(BaseModel):
     name: str
     description: str
 
+
 class RiaziCreate(BaseModel):
     name: str
     description: str
-    class_id: int  # References the Classes model
+    class_id: int
+
 
 class TajrobiCreate(BaseModel):
     name: str
     description: str
     class_id: int
+
 
 class EnsaniCreate(BaseModel):
     name: str
@@ -53,11 +64,21 @@ class EnsaniCreate(BaseModel):
     class_id: int
 
 
+class TeacherCreate(BaseModel):
+    name: str
+    subject: str
+    class_id: int  # Reference to the Classes model
+
+
 # Create a user (this endpoint can be extended with authentication later)
 @app.post("/users/")
 @limiter.limit(f"{REQUESTS_PER_MINUTE}/minute")
 def create_user(user_data: UserCreate, db: Session = Depends(get_db)):
+<<<<<<< HEAD
+    hashed_password = get_password_hash(user_data.password)  # Password hashing
+=======
     hashed_password = get_password_hash(user_data.password)
+>>>>>>> 1566c1112ff38d7088de88a766934ec5cc73b9fd
     new_user = User(username=user_data.username, email=user_data.email, hashed_password=hashed_password)
     db.add(new_user)
     db.commit()
@@ -120,6 +141,20 @@ def create_ensani(ensani_data: EnsaniCreate, db: Session = Depends(get_db)):
     return new_ensani
 
 
+# Create a teacher associated with a class
+@app.post("/teachers/")
+def create_teacher(teacher_data: TeacherCreate, db: Session = Depends(get_db)):
+    db_class = db.query(Classes).filter(Classes.id == teacher_data.class_id).first()
+    if db_class is None:
+        raise HTTPException(status_code=404, detail="Class not found")
+
+    new_teacher = Teachers(name=teacher_data.name, subject=teacher_data.subject, class_id=teacher_data.class_id)
+    db.add(new_teacher)
+    db.commit()
+    db.refresh(new_teacher)
+    return new_teacher
+
+
 # Retrieve all classes
 @app.get("/classes/", response_model=List[ClassCreate])
 @limiter.limit(f"{REQUESTS_PER_MINUTE}/minute")
@@ -146,3 +181,9 @@ def get_tajrobi(db: Session = Depends(get_db)):
 @limiter.limit(f"{REQUESTS_PER_MINUTE}/minute")
 def get_ensani(db: Session = Depends(get_db)):
     return db.query(Ensani).all()
+
+
+# Retrieve all teachers
+@app.get("/teachers/", response_model=List[TeacherCreate])
+def get_teachers(db: Session = Depends(get_db)):
+    return db.query(Teachers).all()
