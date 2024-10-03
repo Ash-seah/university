@@ -5,19 +5,8 @@ from database import SessionLocal
 from models import User, Classes, Riazi, Tajrobi, Ensani, Teachers
 from typing import List
 from auth import get_password_hash  # If you implement authentication features
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-
-
-# Dependency to get the DB session
 
 app = FastAPI()
-
-# rate limiter
-limiter = Limiter(key_func=get_remote_address)
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 REQUESTS_PER_MINUTE = 20
 ACCESS_TOKEN_EXPIRE_MINUTES = 5
@@ -144,28 +133,24 @@ def create_teacher(teacher_data: TeacherCreate, db: Session = Depends(get_db)):
 
 # Retrieve all classes
 @app.get("/classes/", response_model=List[ClassCreate])
-@limiter.limit(f"{REQUESTS_PER_MINUTE}/minute")
 def get_classes(db: Session = Depends(get_db)):
     return db.query(Classes).all()
 
 
 # Retrieve all Riazi entries
 @app.get("/riazi/", response_model=List[RiaziCreate])
-@limiter.limit(f"{REQUESTS_PER_MINUTE}/minute")
 def get_riazi(db: Session = Depends(get_db)):
     return db.query(Riazi).all()
 
 
 # Retrieve all Tajrobi entries
 @app.get("/tajrobi/", response_model=List[TajrobiCreate])
-@limiter.limit(f"{REQUESTS_PER_MINUTE}/minute")
 def get_tajrobi(db: Session = Depends(get_db)):
     return db.query(Tajrobi).all()
 
 
 # Retrieve all Ensani entries
 @app.get("/ensani/", response_model=List[EnsaniCreate])
-@limiter.limit(f"{REQUESTS_PER_MINUTE}/minute")
 def get_ensani(db: Session = Depends(get_db)):
     return db.query(Ensani).all()
 
