@@ -1,5 +1,6 @@
 from behave import given, when, then
 import requests
+from datetime import datetime
 
 BASE_URL = "http://localhost:8000"
 
@@ -12,8 +13,10 @@ def step_when_post_notification(context):
     response = requests.post(f"{BASE_URL}/notifications/", json=context.notification_payload)
     context.response = response
 
-@then('the response status code should be {status_code:d}')
+@then('the response status code should be {status_code}')
 def step_then_status_code(context, status_code):
+    print("context response:" + context.response.content)
+    print("context response:" + context.response.status_code)
     assert context.response.status_code == status_code
 
 @then('the response should contain a notification with slug "{slug}"')
@@ -61,11 +64,6 @@ def step_when_get_notifications(context):
 def step_then_list_of_notifications(context):
     response_data = context.response.json()
     assert isinstance(response_data, list)
-
-from behave import given, when, then
-import requests
-
-BASE_URL = "http://localhost:8000"
 
 @given('I have a news payload with description "{description}" and notification_id {notification_id:d}')
 def step_given_news_payload(context, description, notification_id):
@@ -115,12 +113,6 @@ def step_when_get_news(context):
 def step_then_list_of_news(context):
     response_data = context.response.json()
     assert isinstance(response_data, list)
-
-from behave import given, when, then
-import requests
-from datetime import datetime
-
-BASE_URL = "http://localhost:8000"
 
 @given('I have a discount payload with quantity {quantity:d}, start_time "{start_time}", end_time "{end_time}", notification_id {notification_id:d}, and class_id {class_id:d}')
 def step_given_discount_payload(context, quantity, start_time, end_time, notification_id, class_id):
@@ -177,11 +169,6 @@ def step_then_list_of_discounts(context):
     response_data = context.response.json()
     assert isinstance(response_data, list)
 
-from behave import given, when, then
-import requests
-
-BASE_URL = "http://localhost:8000"
-
 @given('I have a class payload with name "{name}" and description "{description}"')
 def step_given_class_payload(context, name, description):
     context.class_payload = {"name": name, "description": description}
@@ -230,11 +217,6 @@ def step_when_get_classes(context):
 def step_then_list_of_classes(context):
     response_data = context.response.json()
     assert isinstance(response_data, list)
-
-from behave import given, when, then
-import requests
-
-BASE_URL = "http://localhost:8000"
 
 @given('I have a course payload with subject "{subject}", description "{description}", number_of_sessions {number_of_sessions:d}, and discount_id {discount_id:d}')
 def step_given_course_payload(context, subject, description, number_of_sessions, discount_id):
