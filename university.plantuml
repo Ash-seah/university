@@ -48,8 +48,8 @@ class Teachers{
 
 }
 
-university <- user :register and login with this model
-university <- classes : the university has this classes
+university <-- user :register and login with this model
+university <-- classes : the university has this classes
 classes <- Riazi : this class foreignkey to classes
 classes <- Tajrobi : this class foreignkey to classes
 classes <- Ensani : this class foreignkey to classes
@@ -57,3 +57,6 @@ classes <- Teachers : this class foreignkey to classes
 
 
 @enduml
+
+
+
