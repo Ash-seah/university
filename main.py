@@ -2,9 +2,10 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import SessionLocal
-from models import User, Classes, Riazi, Tajrobi, Ensani, Teachers
+from models import User, Classes,  Teachers, Notification, News, Discount, Courses
 from typing import List
-from auth import get_password_hash, verify_password, create_access_token, get_current_user  # Updated import
+from auth import get_password_hash, verify_password, create_access_token, get_current_user
+from datetime import datetime
 
 app = FastAPI()
 
@@ -16,64 +17,191 @@ def get_db():
     finally:
         db.close()
 
-# Pydantic schemas for input validation
+# ------------------------ Pydantic Schemas ------------------------
 class UserCreate(BaseModel):
     username: str
     email: str
-    password: str
-
-class UserLogin(BaseModel):
-    username: str
     password: str
 
 class ClassCreate(BaseModel):
     name: str
     description: str
 
-class RiaziCreate(BaseModel):
+class ClassUpdate(BaseModel):
     name: str
     description: str
-    class_id: int
 
-class TajrobiCreate(BaseModel):
-    name: str
+class NotificationCreate(BaseModel):
+    slug: str
+
+class NotificationUpdate(BaseModel):
+    slug: str
+
+class NewsCreate(BaseModel):
     description: str
-    class_id: int
+    notification_id: int
 
-class EnsaniCreate(BaseModel):
-    name: str
+class NewsUpdate(BaseModel):
     description: str
+
+class DiscountCreate(BaseModel):
+    quantity: int
+    start_time: datetime
+    end_time: datetime
+    notification_id: int
     class_id: int
 
-class TeacherCreate(BaseModel):
-    name: str
+class DiscountUpdate(BaseModel):
+    quantity: int
+    start_time: datetime
+    end_time: datetime
+
+class CourseCreate(BaseModel):
     subject: str
-    class_id: int  # Reference to the Classes model
+    description: str
+    number_of_sessions: int
+    discount_id: int
 
-# Registration endpoint (creates a new user)
-@app.post("/register/")
-def create_user(user_data: UserCreate, db: Session = Depends(get_db)):
-    hashed_password = get_password_hash(user_data.password)  # Password hashing
-    new_user = User(username=user_data.username, email=user_data.email, hashed_password=hashed_password)
-    db.add(new_user)
+class CourseUpdate(BaseModel):
+    subject: str
+    description: str
+    number_of_sessions: int
+
+# ------------------------ CRUD Endpoints for Notifications ------------------------
+
+# Create notification
+@app.post("/notifications/", response_model=NotificationCreate)
+def create_notification(notification_data: NotificationCreate, db: Session = Depends(get_db)):
+    new_notification = Notification(slug=notification_data.slug)
+    db.add(new_notification)
     db.commit()
-    db.refresh(new_user)
-    return {"message": "User registered successfully."}
+    db.refresh(new_notification)
+    return new_notification
 
-# Login endpoint
-@app.post("/login/")
-def login(user_data: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == user_data.username).first()
-    if not user or not verify_password(user_data.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+# Update notification
+@app.put("/notifications/{notification_id}/", response_model=NotificationUpdate)
+def update_notification(notification_id: int, notification_data: NotificationUpdate, db: Session = Depends(get_db)):
+    notification = db.query(Notification).filter(Notification.id == notification_id).first()
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
     
-    access_token = create_access_token(data={"sub": user.username})
-    return {"access_token": access_token, "token_type": "bearer"}
+    notification.slug = notification_data.slug
+    db.commit()
+    db.refresh(notification)
+    return notification
 
-# Logout endpoint (currently a placeholder)
-@app.post("/logout/")
-def logout():
-    return {"message": "Logout successful. Token would be invalidated in a real application."}
+# Delete notification
+@app.delete("/notifications/{notification_id}/")
+def delete_notification(notification_id: int, db: Session = Depends(get_db)):
+    notification = db.query(Notification).filter(Notification.id == notification_id).first()
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    
+    db.delete(notification)
+    db.commit()
+    return {"message": "Notification deleted successfully"}
+
+# Retrieve all notifications
+@app.get("/notifications/", response_model=List[NotificationCreate])
+def get_notifications(db: Session = Depends(get_db)):
+    return db.query(Notification).all()
+
+# ------------------------ CRUD Endpoints for News ------------------------
+
+# Create news
+@app.post("/news/", response_model=NewsCreate)
+def create_news(news_data: NewsCreate, db: Session = Depends(get_db)):
+    notification = db.query(Notification).filter(Notification.id == news_data.notification_id).first()
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    
+    new_news = News(description=news_data.description, notification_id=news_data.notification_id)
+    db.add(new_news)
+    db.commit()
+    db.refresh(new_news)
+    return new_news
+
+# Update news
+@app.put("/news/{news_id}/", response_model=NewsUpdate)
+def update_news(news_id: int, news_data: NewsUpdate, db: Session = Depends(get_db)):
+    news = db.query(News).filter(News.id == news_id).first()
+    if not news:
+        raise HTTPException(status_code=404, detail="News not found")
+    
+    news.description = news_data.description
+    db.commit()
+    db.refresh(news)
+    return news
+
+# Delete news
+@app.delete("/news/{news_id}/")
+def delete_news(news_id: int, db: Session = Depends(get_db)):
+    news = db.query(News).filter(News.id == news_id).first()
+    if not news:
+        raise HTTPException(status_code=404, detail="News not found")
+    
+    db.delete(news)
+    db.commit()
+    return {"message": "News deleted successfully"}
+
+# Retrieve all news
+@app.get("/news/", response_model=List[NewsCreate])
+def get_news(db: Session = Depends(get_db)):
+    return db.query(News).all()
+
+# ------------------------ CRUD Endpoints for Discounts ------------------------
+
+# Create discount
+@app.post("/discounts/", response_model=DiscountCreate)
+def create_discount(discount_data: DiscountCreate, db: Session = Depends(get_db)):
+    notification = db.query(Notification).filter(Notification.id == discount_data.notification_id).first()
+    db_class = db.query(Classes).filter(Classes.id == discount_data.class_id).first()
+    if not notification or not db_class:
+        raise HTTPException(status_code=404, detail="Notification or Class not found")
+    
+    new_discount = Discount(
+        quantity=discount_data.quantity,
+        start_time=discount_data.start_time,
+        end_time=discount_data.end_time,
+        notification_id=discount_data.notification_id,
+        class_id=discount_data.class_id
+    )
+    db.add(new_discount)
+    db.commit()
+    db.refresh(new_discount)
+    return new_discount
+
+# Update discount
+@app.put("/discounts/{discount_id}/", response_model=DiscountUpdate)
+def update_discount(discount_id: int, discount_data: DiscountUpdate, db: Session = Depends(get_db)):
+    discount = db.query(Discount).filter(Discount.id == discount_id).first()
+    if not discount:
+        raise HTTPException(status_code=404, detail="Discount not found")
+    
+    discount.quantity = discount_data.quantity
+    discount.start_time = discount_data.start_time
+    discount.end_time = discount_data.end_time
+    db.commit()
+    db.refresh(discount)
+    return discount
+
+# Delete discount
+@app.delete("/discounts/{discount_id}/")
+def delete_discount(discount_id: int, db: Session = Depends(get_db)):
+    discount = db.query(Discount).filter(Discount.id == discount_id).first()
+    if not discount:
+        raise HTTPException(status_code=404, detail="Discount not found")
+    
+    db.delete(discount)
+    db.commit()
+    return {"message": "Discount deleted successfully"}
+
+# Retrieve all discounts
+@app.get("/discounts/", response_model=List[DiscountCreate])
+def get_discounts(db: Session = Depends(get_db)):
+    return db.query(Discount).all()
+
+# ------------------------ CRUD Endpoints for Classes ------------------------
 
 # Create a class
 @app.post("/classes/", response_model=ClassCreate)
@@ -84,79 +212,61 @@ def create_class(class_data: ClassCreate, db: Session = Depends(get_db)):
     db.refresh(new_class)
     return new_class
 
-# Create Riazi associated with a class
-@app.post("/riazi/", response_model=RiaziCreate)
-def create_riazi(riazi_data: RiaziCreate, db: Session = Depends(get_db)):
-    db_class = db.query(Classes).filter(Classes.id == riazi_data.class_id).first()
-    if db_class is None:
+# Update class
+@app.put("/classes/{class_id}/", response_model=ClassUpdate)
+def update_class(class_id: int, class_data: ClassUpdate, db: Session = Depends(get_db)):
+    db_class = db.query(Classes).filter(Classes.id == class_id).first()
+    if not db_class:
         raise HTTPException(status_code=404, detail="Class not found")
 
-    new_riazi = Riazi(name=riazi_data.name, description=riazi_data.description, class_id=riazi_data.class_id)
-    db.add(new_riazi)
+    db_class.name = class_data.name
+    db_class.description = class_data.description
     db.commit()
-    db.refresh(new_riazi)
-    return new_riazi
+    db.refresh(db_class)
+    return db_class
 
-# Create Tajrobi associated with a class
-@app.post("/tajrobi/", response_model=TajrobiCreate)
-def create_tajrobi(tajrobi_data: TajrobiCreate, db: Session = Depends(get_db)):
-    db_class = db.query(Classes).filter(Classes.id == tajrobi_data.class_id).first()
-    if db_class is None:
+# Delete class
+@app.delete("/classes/{class_id}/")
+def delete_class(class_id: int, db: Session = Depends(get_db)):
+    db_class = db.query(Classes).filter(Classes.id == class_id).first()
+    if not db_class:
         raise HTTPException(status_code=404, detail="Class not found")
-
-    new_tajrobi = Tajrobi(name=tajrobi_data.name, description=tajrobi_data.description, class_id=tajrobi_data.class_id)
-    db.add(new_tajrobi)
+    
+    db.delete(db_class)
     db.commit()
-    db.refresh(new_tajrobi)
-    return new_tajrobi
-
-# Create Ensani associated with a class
-@app.post("/ensani/", response_model=EnsaniCreate)
-def create_ensani(ensani_data: EnsaniCreate, db: Session = Depends(get_db)):
-    db_class = db.query(Classes).filter(Classes.id == ensani_data.class_id).first()
-    if db_class is None:
-        raise HTTPException(status_code=404, detail="Class not found")
-
-    new_ensani = Ensani(name=ensani_data.name, description=ensani_data.description, class_id=ensani_data.class_id)
-    db.add(new_ensani)
-    db.commit()
-    db.refresh(new_ensani)
-    return new_ensani
-
-# Create a teacher associated with a class
-@app.post("/teachers/", response_model=TeacherCreate)
-def create_teacher(teacher_data: TeacherCreate, db: Session = Depends(get_db)):
-    db_class = db.query(Classes).filter(Classes.id == teacher_data.class_id).first()
-    if db_class is None:
-        raise HTTPException(status_code=404, detail="Class not found")
-
-    new_teacher = Teachers(name=teacher_data.name, subject=teacher_data.subject, class_id=teacher_data.class_id)
-    db.add(new_teacher)
-    db.commit()
-    db.refresh(new_teacher)
-    return new_teacher
+    return {"message": "Class deleted successfully"}
 
 # Retrieve all classes
 @app.get("/classes/", response_model=List[ClassCreate])
 def get_classes(db: Session = Depends(get_db)):
     return db.query(Classes).all()
 
-# Retrieve all Riazi entries
-@app.get("/riazi/", response_model=List[RiaziCreate])
-def get_riazi(db: Session = Depends(get_db)):
-    return db.query(Riazi).all()
+# ------------------------ CRUD Endpoints for Courses ------------------------
 
-# Retrieve all Tajrobi entries
-@app.get("/tajrobi/", response_model=List[TajrobiCreate])
-def get_tajrobi(db: Session = Depends(get_db)):
-    return db.query(Tajrobi).all()
+# Create course
+@app.post("/courses/", response_model=CourseCreate)
+def create_course(course_data: CourseCreate, db: Session = Depends(get_db)):
+    discount = db.query(Discount).filter(Discount.id == course_data.discount_id).first()
+    if not discount:
+        raise HTTPException(status_code=404, detail="Discount not found")
+    
+    new_course = Courses(
+        subject=course_data.subject,
+        description=course_data.description,
+        number_of_sessions=course_data.number_of_sessions,
+        discount_id=course_data.discount_id
+    )
+    db.add(new_course)
+    db.commit()
+    db.refresh(new_course)
+    return new_course
 
-# Retrieve all Ensani entries
-@app.get("/ensani/", response_model=List[EnsaniCreate])
-def get_ensani(db: Session = Depends(get_db)):
-    return db.query(Ensani).all()
-
-# Retrieve all teachers
-@app.get("/teachers/", response_model=List[TeacherCreate])
-def get_teachers(db: Session = Depends(get_db)):
-    return db.query(Teachers).all()
+# Update course
+@app.put("/courses/{course_id}/", response_model=CourseUpdate)
+def update_course(course_id: int, course_data: CourseUpdate, db: Session = Depends(get_db)):
+    course = db.query(Courses).filter(Courses.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    course.subject = course_data.subject
+    course.description = course
