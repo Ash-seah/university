@@ -4,13 +4,7 @@ from pydantic import BaseModel
 from database import SessionLocal
 from models import User, Classes, Riazi, Tajrobi, Ensani, Teachers
 from typing import List
-<<<<<<< HEAD
 from auth import get_password_hash  # If you implement authentication features
-
-app = FastAPI()
-
-# Dependency to get the DB session
-=======
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -25,7 +19,6 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 REQUESTS_PER_MINUTE = 20
 ACCESS_TOKEN_EXPIRE_MINUTES = 5
 
->>>>>>> 1566c1112ff38d7088de88a766934ec5cc73b9fd
 def get_db():
     db = SessionLocal()
     try:
@@ -74,11 +67,9 @@ class TeacherCreate(BaseModel):
 @app.post("/users/")
 @limiter.limit(f"{REQUESTS_PER_MINUTE}/minute")
 def create_user(user_data: UserCreate, db: Session = Depends(get_db)):
-<<<<<<< HEAD
     hashed_password = get_password_hash(user_data.password)  # Password hashing
-=======
     hashed_password = get_password_hash(user_data.password)
->>>>>>> 1566c1112ff38d7088de88a766934ec5cc73b9fd
+
     new_user = User(username=user_data.username, email=user_data.email, hashed_password=hashed_password)
     db.add(new_user)
     db.commit()
