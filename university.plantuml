@@ -1,52 +1,121 @@
+' @startuml
+
+' class User {
+'     id: int
+'     username: str
+'     email: str
+'     hashed_password: str
+'     is_active: bool
+' }
+
+' class Classes {
+'     id: int
+'     name: str
+'     description: str
+'     owner_id: int
+' }
+
+' class Riazi {
+'     id: int
+'     name: str
+'     description: str
+'     class_id: int
+' }
+
+' class Tajrobi {
+'     id: int
+'     name: str
+'     description: str
+'     class_id: int
+' }
+
+' class Ensani {
+'     id: int
+'     name: str
+'     description: str
+'     class_id: int
+' }
+
+' class Teachers {
+'     id: int
+'     name: str
+'     subject: str
+'     class_id: int
+' }
+
+' User --> Classes : owns
+' Classes --> Riazi : foreign key
+' Classes --> Tajrobi : foreign key
+' Classes --> Ensani : foreign key
+' Classes --> Teachers : foreign key
+
+' @enduml
+
 @startuml
 
-class User {
-    id: int
-    username: str
-    email: str
-    hashed_password: str
-    is_active: bool
-}
+!define ENUM(name) class name << (E,#FFAAAA) >>
+!define BASE(name) class name << (B,#AAAAFF) >>
 
-class Classes {
-    id: int
-    name: str
-    description: str
-    owner_id: int
-}
+BASE(Base)
 
-class Riazi {
-    id: int
-    name: str
-    description: str
-    class_id: int
-}
+ENUM(SubjectEnum)
+User : + id: Integer
+User : + username: String
+User : + email: String
+User : + hashed_password: String
+User : + is_active: Boolean
+User : - classes: List<Classes>
 
-class Tajrobi {
-    id: int
-    name: str
-    description: str
-    class_id: int
-}
+Classes : + id: Integer
+Classes : + name: String
+Classes : + description: String
+Classes : + owner_id: Integer
+Classes : + subject: SubjectEnum
+Classes : - owner: User
+Classes : - teachers: List<Teachers>
+Classes : - discounts: List<Discount>
 
-class Ensani {
-    id: int
-    name: str
-    description: str
-    class_id: int
-}
+Teachers : + id: Integer
+Teachers : + name: String
+Teachers : + subject: String
+Teachers : + class_id: Integer
+Teachers : - class_info: Classes
 
-class Teachers {
-    id: int
-    name: str
-    subject: str
-    class_id: int
-}
+Notification : + id: Integer
+Notification : + created_at: DateTime
+Notification : + updated_at: DateTime
+Notification : + slug: String
+Notification : - news: List<News>
+Notification : - discounts: List<Discount>
+
+News : + id: Integer
+News : + description: String
+News : + notification_id: Integer
+News : - notification: Notification
+
+Discount : + id: Integer
+Discount : + quantity: Integer
+Discount : + start_time: DateTime
+Discount : + end_time: DateTime
+Discount : + notification_id: Integer
+Discount : + class_id: Integer
+Discount : - notification: Notification
+Discount : - classes: List<Classes>
+Discount : - courses: List<Courses>
+
+Courses : + id: Integer
+Courses : + subject: String
+Courses : + description: String
+Courses : + number_of_sessions: Integer
+Courses : + discount_id: Integer
+Courses : - discount: Discount
 
 User --> Classes : owns
-Classes --> Riazi : foreign key
-Classes --> Tajrobi : foreign key
-Classes --> Ensani : foreign key
-Classes --> Teachers : foreign key
+Classes --> Teachers : has
+Classes --> Discount : has
+Notification --> News : has
+Notification --> Discount : has
+Discount --> Classes : applies to
+Discount --> Courses : includes
 
 @enduml
