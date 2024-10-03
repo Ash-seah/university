@@ -44,9 +44,9 @@ class Teachers {
 }
 
 User --> Classes : owns
-Classes --> Riazi : contains
-Classes --> Tajrobi : contains
-Classes --> Ensani : contains
-Classes --> Teachers : contains
+Classes --> Riazi : foreign key
+Classes --> Tajrobi : foreign key
+Classes --> Ensani : foreign key
+Classes --> Teachers : foreign key
 
 @enduml
