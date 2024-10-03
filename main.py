@@ -8,7 +8,13 @@ from typing import List
 
 app = FastAPI()
 
+<<<<<<< HEAD
 # Dependency to get the DB session
+=======
+ACCESS_TOKEN_EXPIRE_MINUTES = 5
+
+# Dependency to get the database session
+>>>>>>> 92c774f1442cb51ceb114ec65c1252508962c23a
 def get_db():
     db = SessionLocal()
     try:
