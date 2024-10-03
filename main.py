@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from database import SessionLocal
 from models import User, Classes, Riazi, Tajrobi, Ensani, Teachers
 from typing import List
-from auth import get_password_hash, verify_password  # Import password hashing and verification functions
+from auth import get_password_hash, verify_password, create_access_token, get_current_user  # Updated import
 
 app = FastAPI()
 
@@ -20,6 +20,10 @@ def get_db():
 class UserCreate(BaseModel):
     username: str
     email: str
+    password: str
+
+class UserLogin(BaseModel):
+    username: str
     password: str
 
 class ClassCreate(BaseModel):
@@ -58,11 +62,18 @@ def create_user(user_data: UserCreate, db: Session = Depends(get_db)):
 
 # Login endpoint
 @app.post("/login/")
-def login(user_data: UserCreate, db: Session = Depends(get_db)):
+def login(user_data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == user_data.username).first()
     if not user or not verify_password(user_data.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    return {"message": "Login successful"}
+    
+    access_token = create_access_token(data={"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+# Logout endpoint (currently a placeholder)
+@app.post("/logout/")
+def logout():
+    return {"message": "Logout successful. Token would be invalidated in a real application."}
 
 # Create a class
 @app.post("/classes/", response_model=ClassCreate)
